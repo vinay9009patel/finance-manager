@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
+
 import errorHandler from "./src/middleware/error.middleware.js";
 import connectDB from "./src/config/db.js";
 
@@ -22,32 +23,28 @@ import notificationRoutes from "./src/routes/notification.route.js";
 dotenv.config();
 
 const app = express();
-const defaultOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  "https://finance-manager-1owwk5p5i-vinay9009patels-projects.vercel.app/"
-];
-const allowedOrigins = (process.env.CORS_ORIGIN || process.env.CLIENT_URL || defaultOrigins.join(","))
-  .split(",")
-  .map((item) => item.trim())
-  .filter(Boolean);
-const isAllowedOrigin = (origin) => !origin || allowedOrigins.includes(origin);
+
+/* ---------------- Security Middleware ---------------- */
 
 app.use(helmet());
-app.use(cors({
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) {
-      return callback(null, true);
-    }
 
-    return callback(new Error("Origin not allowed by CORS"));
-  }
+/* ---------------- CORS FIX ---------------- */
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET","POST","PUT","DELETE"],
+  credentials: true
 }));
+
+/* ---------------- Body Parser ---------------- */
+
 app.use(express.json());
 
+/* ---------------- Database ---------------- */
+
 connectDB();
+
+/* ---------------- Routes ---------------- */
 
 app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
@@ -62,36 +59,49 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/badges", badgeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use(errorHandler)
+
+/* ---------------- Root Route ---------------- */
+
 app.get("/", (req, res) => {
   res.send("Finance Manager API Running 🚀");
 });
+
+/* ---------------- Error Middleware ---------------- */
+
+app.use(errorHandler);
+
+/* ---------------- Server + Socket ---------------- */
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins
+    origin: "*"
   }
 });
 
+/* ---------------- Socket Connection ---------------- */
+
 io.on("connection", (socket) => {
 
- console.log("User connected:", socket.id);
+  console.log("User connected:", socket.id);
 
- socket.on("join", (userId) => {
+  socket.on("join", (userId) => {
 
-   socket.join(`user_${userId}`);
+    socket.join(`user_${userId}`);
 
-   console.log(`User joined room user_${userId}`);
+    console.log(`User joined room user_${userId}`);
 
- });
+  });
 
- socket.on("disconnect", () => {
-   console.log("User disconnected");
- });
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 
 });
+
+/* ---------------- Port ---------------- */
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
