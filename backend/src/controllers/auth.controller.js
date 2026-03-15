@@ -147,11 +147,15 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
-
- export const loginUser = async (req, res) => {
-
+export const loginUser = async (req, res) => {
   try {
+
+    if (!req.body) {
+      return res.status(400).json({
+        message: "Request body missing"
+      });
+    }
+
     const { error } = loginValidator.validate(req.body);
 
     if (error) {
@@ -161,13 +165,26 @@ export const registerUser = async (req, res) => {
     }
 
     const { email, password } = req.body;
-    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password required"
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
 
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({
         message: "Invalid email or password"
+      });
+    }
+
+    if (!user.password) {
+      return res.status(500).json({
+        message: "User password not set"
       });
     }
 
@@ -192,12 +209,13 @@ export const registerUser = async (req, res) => {
 
   } catch (error) {
 
+    console.error("LOGIN ERROR:", error);
+
     res.status(500).json({
       message: "Server error"
     });
 
   }
-
 };
 
 export const linkParentByCode = async (req, res) => {
