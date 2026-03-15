@@ -26,7 +26,8 @@ const defaultOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:3000",
-  "http://127.0.0.1:3000"
+  "http://127.0.0.1:3000",
+  "https://finance-manager-1owwk5p5i-vinay9009patels-projects.vercel.app/"
 ];
 const allowedOrigins = (process.env.CORS_ORIGIN || process.env.CLIENT_URL || defaultOrigins.join(","))
   .split(",")
