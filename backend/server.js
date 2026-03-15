@@ -24,17 +24,20 @@ dotenv.config();
 
 const app = express();
 
-/* ---------------- Security Middleware ---------------- */
+/* ---------------- Security ---------------- */
 
 app.use(helmet());
 
 /* ---------------- CORS FIX ---------------- */
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET","POST","PUT","DELETE"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  })
+);
 
 /* ---------------- Body Parser ---------------- */
 
@@ -66,21 +69,24 @@ app.get("/", (req, res) => {
   res.send("Finance Manager API Running 🚀");
 });
 
-/* ---------------- Error Middleware ---------------- */
+/* ---------------- Error Handler ---------------- */
 
 app.use(errorHandler);
 
-/* ---------------- Server + Socket ---------------- */
+/* ---------------- Server ---------------- */
 
 const server = http.createServer(app);
 
+/* ---------------- Socket.IO ---------------- */
+
 const io = new Server(server, {
   cors: {
-    origin: "*"
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 
-/* ---------------- Socket Connection ---------------- */
+/* ---------------- Socket Events ---------------- */
 
 io.on("connection", (socket) => {
 
@@ -95,7 +101,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+
+    console.log("User disconnected:", socket.id);
+
   });
 
 });
@@ -105,7 +113,11 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
+
   console.log(`Server running on port ${PORT}`);
+
 });
+
+/* ---------------- Export ---------------- */
 
 export { io };
